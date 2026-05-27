@@ -29,8 +29,7 @@ const PROJECTS = [
     numbers: [{ v: "1st", l: "Indic diffusion LM" }, { v: "11", l: "downloads so far" }, { v: "V2", l: "coming soon" }],
     stack: ["HuggingFace", "IndicBERT", "Diffusion LM", "Indic NLP"],
     link: "https://huggingface.co/Prahaladha/telugu-diffusion-lm",
-    accent: "#bf3d1c",
-    muted:  "#3a1208",
+    accent: "#00ffff", // Cyan
     seed: 7,
   },
   {
@@ -43,8 +42,7 @@ const PROJECTS = [
     numbers: [{ v: "20K+", l: "brain points" }, { v: "7", l: "networks tracked" }, { v: "400", l: "brain regions" }],
     stack: ["TRIBE v2", "fMRI Data", "Python", "Brain Networks"],
     link: "https://github.com/Prahaladha-Reddy/VinD",
-    accent: "#2a6660",
-    muted:  "#0a2220",
+    accent: "#ff2a2a", // Glitch Red
     seed: 13,
   },
   {
@@ -57,8 +55,7 @@ const PROJECTS = [
     numbers: [{ v: "3", l: "learning modes" }, { v: "∞", l: "real repos" }, { v: "0", l: "passive reading" }],
     stack: ["VS Code API", "TypeScript", "Spaced Repetition", "Git"],
     link: "https://github.com/Prahaladha-Reddy/Teach-Me",
-    accent: "#3d5218",
-    muted:  "#151c08",
+    accent: "#39ff14", // Acid Green
     seed: 21,
   },
 ];
@@ -99,13 +96,8 @@ const STACK_GROUPS = [
   { label: "Research", items: ["spaCy", "Docling", "Indic NLP", "fMRI / TRIBE v2", "Diffusion LMs"] },
 ];
 
-// ─── CHAR CANVAS — the showpiece ─────────────────────────────────────────────
-// Stolen directly from the ASCII character art pin.
-// Characters (@, S, X, 8, t, :, ;, .) form the visual texture.
-// Near your cursor: they bloom into brick red, grow, cycle faster.
-// Far away: barely visible dim grey. The canvas IS the background.
-
-const CHARSET = ["·",".",":",";"," ","~","+","=","-","|","@","#","%","8","S","X",">","<","!","*","^","&"];
+// ─── CHAR CANVAS (Surreal Ocean Version) ──────────────────────────────────────
+const CHARSET = ["·",".",":",";","~","+","=","-","|","@","#","%","8","S","X",">","<"];
 const CHARSET_ACTIVE = ["@","#","%","!","*","^","&","8","S","X",">","<","=","+","~"];
 
 function CharCanvas() {
@@ -117,13 +109,13 @@ function CharCanvas() {
     const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const COLS = 52, ROWS = 28;
+    const COLS = 60, ROWS = 35;
     let cells = [], W = 0, H = 0;
 
     function resize() {
       const el = canvas.parentElement;
       W = el.clientWidth; H = el.clientHeight;
-      const dpr = devicePixelRatio || 1;
+      const dpr = window.devicePixelRatio || 1;
       canvas.width = W * dpr; canvas.height = H * dpr;
       canvas.style.width = W + "px"; canvas.style.height = H + "px";
       ctx.scale(dpr, dpr);
@@ -138,10 +130,9 @@ function CharCanvas() {
           cells.push({
             x: gx * (c + 0.5),
             y: gy * (r + 0.5),
-            phase: Math.random() * Math.PI * 2,
-            spd: 0.35 + Math.random() * 0.9,
+            phaseX: c * 0.1,
+            phaseY: r * 0.1,
             charOff: Math.random() * CHARSET.length,
-            charSpd: 0.004 + Math.random() * 0.008,
           });
         }
       }
@@ -150,37 +141,45 @@ function CharCanvas() {
     function frame(t) {
       ctx.clearRect(0, 0, W, H);
       const mx = mouse.current.x, my = mouse.current.y;
-      const MAX = 170;
+      
+      // We simulate an ocean wave math over time
+      const time = t * 0.001;
 
       for (const c of cells) {
         const dx = c.x - mx, dy = c.y - my;
         const dist = Math.hypot(dx, dy);
-        const pulse = 0.5 + 0.5 * Math.sin(t * 0.0007 * c.spd + c.phase);
+        
+        // Ocean wave math
+        const wave1 = Math.sin(c.phaseX + time) * Math.cos(c.phaseY + time * 0.5);
+        const wave2 = Math.sin(c.phaseX * 0.5 - time * 0.8) * Math.cos(c.phaseY * 0.8 + time * 1.2);
+        const combinedWave = (wave1 + wave2) / 2; // -1 to 1
 
-        // Character selection — near cursor: active set, far: ambient set
-        const ci = (c.charOff + t * c.charSpd) % 1;
-        const charIdx = Math.floor(ci * CHARSET.length) % CHARSET.length;
+        let charIdx = Math.floor((c.charOff + time * 2) % CHARSET.length);
         let char = CHARSET[charIdx];
-        let fontSize = 9 + pulse * 2;
-        let alpha = 0.055 + pulse * 0.04;
-        let cr = 78, cg = 74, cb = 70;
+        
+        let fontSize = 10 + combinedWave * 4;
+        let alpha = 0.1 + (combinedWave + 1) * 0.15;
+        
+        // Base deep ocean colors
+        let cr = 0, cg = 40 + (combinedWave + 1) * 50, cb = 100 + (combinedWave + 1) * 70;
 
-        if (dist < MAX) {
-          const ratio = 1 - dist / MAX;
-          const s = ratio * ratio * (3 - 2 * ratio);
-          fontSize = fontSize + s * 16;
+        // Mouse interaction (Surreal Glitch)
+        if (dist < 150) {
+          const ratio = 1 - dist / 150;
+          const s = ratio * ratio;
+          fontSize += s * 20;
           alpha = Math.max(alpha, s * 0.9);
-
-          // Very near: use active chars like the ASCII art figure
-          if (dist < 45) {
-            const ai = Math.floor((t * 0.018 + c.charOff * 3)) % CHARSET_ACTIVE.length;
-            char = CHARSET_ACTIVE[ai];
+          
+          char = CHARSET_ACTIVE[Math.floor((t * 0.02 + c.charOff)) % CHARSET_ACTIVE.length];
+          
+          // Glitch colors on mouse: cyan/red mix
+          cr = Math.round(s * 255);
+          cg = Math.round((1-s) * 255);
+          cb = 255;
+          
+          if (Math.random() < 0.05 * s) { // Random glitch flicker
+             cr = 255; cg = 0; cb = 0; // Flash red
           }
-
-          // Warm grey → brick red
-          cr = Math.round(78 + s * (192 - 78));
-          cg = Math.round(74 + s * (61 - 74));
-          cb = Math.round(70 + s * (26 - 70));
         }
 
         ctx.globalAlpha = alpha;
@@ -215,24 +214,16 @@ function CharCanvas() {
     };
   }, []);
 
-  return (
-    <canvas
-      ref={ref}
-      className="char-canvas"
-      aria-hidden="true"
-    />
-  );
+  return <canvas ref={ref} className="char-canvas" aria-hidden="true" />;
 }
 
-// ─── PIXEL MOSAIC — stolen from the red grid pin ──────────────────────────────
-// Fills full project panels. The grid IS the image.
-
-function Mosaic({ cols = 36, rows = 20, seed = 1, accent = "#bf3d1c", style, className }) {
+// ─── PIXEL MOSAIC (Dithered Backgrounds) ──────────────────────────────────────
+function Mosaic({ cols = 40, rows = 24, seed = 1, accent = "#0ff", style, className }) {
   const cells = useMemo(() => {
     return Array.from({ length: cols * rows }, (_, i) => {
       const h = (((i + 1) * 2246822519 + seed * 2654435761) >>> 0) % 1000;
       const v = h / 1000;
-      return v > 0.38 ? v : 0;
+      return v > 0.4 ? v : 0;
     });
   }, [cols, rows, seed]);
 
@@ -243,63 +234,39 @@ function Mosaic({ cols = 36, rows = 20, seed = 1, accent = "#bf3d1c", style, cla
       aria-hidden="true"
     >
       {cells.map((v, i) => (
-        <div
-          key={i}
-          className="mc"
-          style={{ "--v": v, "--i": i }}
-        />
+        <div key={i} className="mc" style={{ "--v": v, "--i": i }} />
       ))}
     </div>
   );
 }
 
-// ─── TEXT SCRAMBLE — stolen from the char-art vibe ───────────────────────────
-
+// ─── TEXT SCRAMBLE ───────────────────────────────────────────────────────────
 function useScramble(text, active) {
   const [out, setOut] = useState(text);
-  const CHARS = "!@#$%^&*=+-<>?/|~;:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const CHARS = "!@#$%^&*<>?/|~;:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
   useEffect(() => {
     if (!active) { setOut(text); return; }
     let it = 0;
-    const total = text.length * 2.8;
+    const total = text.length * 2;
     const iv = setInterval(() => {
       setOut(
         text.split("").map((ch, i) => {
           if (ch === " " || ch === "\n") return ch;
-          if (i < it / 2.8) return text[i];
+          if (i < it / 2) return text[i];
           return CHARS[Math.floor(Math.random() * CHARS.length)];
         }).join("")
       );
       it++;
       if (it >= total) clearInterval(iv);
-    }, 28);
+    }, 30);
     return () => clearInterval(iv);
   }, [active, text]);
 
   return out;
 }
 
-// ─── MARQUEE ──────────────────────────────────────────────────────────────────
-
-function Marquee() {
-  const items = [...TICKER_ITEMS, ...TICKER_ITEMS];
-  return (
-    <div className="marquee-wrap" aria-hidden="true">
-      <div className="marquee-track">
-        {items.map((item, i) => (
-          <span key={i} className="marquee-item">
-            {item}
-            <span className="marquee-sep">·</span>
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── REVEAL HOOK ──────────────────────────────────────────────────────────────
-
 function useReveal() {
   useEffect(() => {
     const nodes = document.querySelectorAll("[data-reveal]");
@@ -312,19 +279,72 @@ function useReveal() {
           io.unobserve(e.target);
         });
       },
-      { threshold: 0.04 }
+      { threshold: 0.05 }
     );
     nodes.forEach((n) => io.observe(n));
     return () => io.disconnect();
   }, []);
 }
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
+// ─── CUSTOM CURSOR ────────────────────────────────────────────────────────────
+function CustomCursor() {
+  const [pos, setPos] = useState({ x: -100, y: -100 });
+  const [clicking, setClicking] = useState(false);
+  const [hovering, setHovering] = useState(false);
 
+  useEffect(() => {
+    const mm = (e) => setPos({ x: e.clientX, y: e.clientY });
+    const md = () => setClicking(true);
+    const mu = () => setClicking(false);
+    
+    // Check if hovering interactive elements
+    const checkHover = (e) => {
+      const target = e.target;
+      if (target.tagName.toLowerCase() === 'a' || target.tagName.toLowerCase() === 'button' || target.closest('a') || target.closest('button') || target.classList.contains('esc-btn')) {
+        setHovering(true);
+      } else {
+        setHovering(false);
+      }
+    };
+
+    window.addEventListener('mousemove', mm);
+    window.addEventListener('mousemove', checkHover);
+    window.addEventListener('mousedown', md);
+    window.addEventListener('mouseup', mu);
+    return () => {
+      window.removeEventListener('mousemove', mm);
+      window.removeEventListener('mousemove', checkHover);
+      window.removeEventListener('mousedown', md);
+      window.removeEventListener('mouseup', mu);
+    };
+  }, []);
+
+  return (
+    <div 
+      className={`cursor-dot ${clicking ? 'clicking' : ''} ${hovering ? 'hovering' : ''}`}
+      style={{ left: pos.x, top: pos.y }}
+    />
+  );
+}
+
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
 function App() {
   useReveal();
+  const [escaped, setEscaped] = useState(false);
+
   return (
     <>
+      <CustomCursor />
+      
+      {/* The Entrance */}
+      <div className={`esc-overlay ${escaped ? 'dismissed' : ''}`}>
+        <button className="esc-btn" onClick={() => setEscaped(true)}>
+          ESC
+        </button>
+      </div>
+      <div className={`glitch-flash ${escaped ? 'active' : ''}`} />
+
       <a className="skip" href="#main">Skip to content</a>
       <main id="main">
         <Nav />
@@ -340,7 +360,6 @@ function App() {
 }
 
 // ─── NAV ──────────────────────────────────────────────────────────────────────
-
 function Nav() {
   return (
     <nav className="nav">
@@ -349,22 +368,14 @@ function Nav() {
         <a href="#projects">Projects</a>
         <a href="#work">Work</a>
         <a href="#stack">Stack</a>
-        <a
-          href="https://github.com/Prahaladha-Reddy"
-          target="_blank" rel="noopener"
-          aria-label="GitHub"
-        >
+        <a href="https://github.com/Prahaladha-Reddy" target="_blank" rel="noopener" aria-label="GitHub">
           <GithubLogo weight="bold" />
         </a>
-        <a
-          href="https://x.com/PrahaladReddyB"
-          target="_blank" rel="noopener"
-          aria-label="X"
-        >
+        <a href="https://x.com/PrahaladReddyB" target="_blank" rel="noopener" aria-label="X">
           <XLogo weight="bold" />
         </a>
         <a className="nav-hire" href="mailto:prahaladhareddyboreddy@gmail.com">
-          Hire me <ArrowUpRight weight="bold" />
+          Hire me
         </a>
       </div>
     </nav>
@@ -372,49 +383,33 @@ function Nav() {
 }
 
 // ─── HERO ─────────────────────────────────────────────────────────────────────
-// Full viewport. CharCanvas is the background. Text floats on top.
-// No panel borders — it's one dark cinematic frame.
-
 function Hero() {
   return (
     <section className="hero">
-      {/* Full-background character art canvas */}
       <div className="hero-canvas-wrap" aria-hidden="true">
         <CharCanvas />
-        {/* Halftone image overlay — blends with canvas like clouds */}
-        <img
-          src="/halftone.png"
-          alt=""
-          className="hero-halftone"
-        />
       </div>
 
-      {/* Content floats above canvas */}
       <div className="hero-content">
-        <div className="hero-top">
+        <div className="hero-top" data-reveal>
           <div className="hero-badge">
             <span className="badge-dot" />
-            AI ENGINEER · ECE '26 · RGUKT
-          </div>
-          <div className="hero-badge hero-badge-right">
-            KAIROS.COMPUTER · AFORE CAPITAL
+            AI ENGINEER · ECE '26
           </div>
         </div>
 
-        <div className="hero-main">
+        <div className="hero-main" data-reveal>
           <h1 className="hero-name">
             <span>PRAHALAD</span>
             <span className="hero-name-indent">REDDY.</span>
           </h1>
-
           <p className="hero-desc">
             Building things that don't exist yet. Voice agents, a neural
             focus group simulator, the first Telugu diffusion LM — in
             production, as a student.
           </p>
-
           <div className="hero-actions">
-            <a className="cta-primary" href="#projects" id="hero-cta">
+            <a className="cta-primary" href="#projects">
               See the work <ArrowUpRight weight="bold" />
             </a>
             <a className="cta-secondary" href="mailto:prahaladhareddyboreddy@gmail.com">
@@ -423,22 +418,18 @@ function Hero() {
           </div>
         </div>
 
-        <div className="hero-bottom">
-          <div className="hero-nums">
-            <div className="hnum">
-              <strong>1st</strong><span>Indic diffusion LM</span>
-            </div>
-            <div className="hnum-sep" />
-            <div className="hnum">
-              <strong>20K+</strong><span>brain points mapped</span>
-            </div>
-            <div className="hnum-sep" />
-            <div className="hnum">
-              <strong>35%</strong><span>better recs (LangGraph)</span>
-            </div>
+        <div className="hero-bottom" data-reveal>
+          <div className="hnum">
+            <strong>1st</strong><span>Indic diffusion LM</span>
+          </div>
+          <div className="hnum">
+            <strong>20K+</strong><span>brain points mapped</span>
+          </div>
+          <div className="hnum">
+            <strong>35%</strong><span>better recs (LangGraph)</span>
           </div>
           <p className="hero-hover-hint" aria-hidden="true">
-            [ move cursor to interact ]
+            [ initiate interaction ]
           </p>
         </div>
       </div>
@@ -446,70 +437,99 @@ function Hero() {
   );
 }
 
-// ─── PROJECTS ─────────────────────────────────────────────────────────────────
-// Cinematic full-bleed panels. Pixel mosaic fills the panel.
-// Big project number in outline text behind content.
-// Text scrambles on hover. Stolen from pin 5 aesthetic.
+// ─── MARQUEE ──────────────────────────────────────────────────────────────────
+function Marquee() {
+  const items = [...TICKER_ITEMS, ...TICKER_ITEMS];
+  return (
+    <div className="marquee-wrap" aria-hidden="true">
+      <div className="marquee-track">
+        {items.map((item, i) => (
+          <span key={i} className="marquee-item">
+            {item}
+            <span className="marquee-sep">X</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
+// ─── PROJECTS ─────────────────────────────────────────────────────────────────
 function ProjectCard({ p, i }) {
   const [hovered, setHovered] = useState(false);
   const title = useScramble(p.title, hovered);
+  const cardRef = useRef(null);
+
+  // 3D Parallax effect
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const rotateX = ((y - centerY) / centerY) * -10; // Max 10 deg
+    const rotateY = ((x - centerX) / centerX) * 10;
+    
+    cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    if (cardRef.current) {
+      cardRef.current.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+    }
+  };
 
   return (
-    <article
-      id={`proj-${p.id}`}
-      className="proj-panel"
-      style={{ "--accent": p.accent, "--muted": p.muted }}
-      data-reveal
-      style2={{ "--delay": `${i * 60}ms` }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {/* Full-bleed pixel mosaic — the grid IS the art */}
-      <div className="proj-mosaic-bg">
-        <Mosaic cols={40} rows={22} seed={p.seed} accent={p.accent} />
-      </div>
-
-      {/* Huge outline number behind content */}
-      <div className="proj-num-bg" aria-hidden="true">{p.id}</div>
-
-      {/* Content */}
-      <div className="proj-inner">
-        <div className="proj-top-row">
-          <span className="eyebrow" style={{ color: p.accent }}>{p.tag}</span>
-          <a
-            href={p.link}
-            target="_blank"
-            rel="noopener"
-            className="proj-link-btn"
-            aria-label={`View ${p.title} on GitHub`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            View project <ArrowUpRight weight="bold" />
-          </a>
+    <div className="proj-panel-wrap" data-reveal style={{ "--delay": `${i * 100}ms` }}>
+      <article
+        id={`proj-${p.id}`}
+        className="proj-panel"
+        ref={cardRef}
+        onMouseEnter={() => setHovered(true)}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{ "--accent": p.accent }}
+      >
+        <div className="proj-mosaic-bg">
+          <Mosaic cols={40} rows={22} seed={p.seed} accent={p.accent} />
         </div>
 
-        <h3 className="proj-title">{title}</h3>
-        <p className="proj-punch">{p.punch}</p>
-        <p className="proj-story">{p.story}</p>
+        <div className="proj-num-bg" aria-hidden="true">{p.id}</div>
 
-        <div className="proj-foot">
-          <div className="proj-numbers">
-            {p.numbers.map((n) => (
-              <div key={n.l} className="pnum">
-                <strong>{n.v}</strong>
-                <span>{n.l}</span>
-              </div>
-            ))}
+        <div className="proj-inner">
+          <div className="proj-top-row">
+            <span className="eyebrow" style={{ color: p.accent }}>{p.tag}</span>
+            <a href={p.link} target="_blank" rel="noopener" className="proj-link-btn">
+              View project <ArrowUpRight weight="bold" />
+            </a>
           </div>
-          <div className="proj-stack">
-            {p.stack.map((s) => (
-              <span key={s} className="stag">{s}</span>
-            ))}
+
+          <h3 className="proj-title">{title}</h3>
+          <p className="proj-punch">{p.punch}</p>
+          <p className="proj-story">{p.story}</p>
+
+          <div className="proj-foot">
+            <div className="proj-numbers">
+              {p.numbers.map((n) => (
+                <div key={n.l} className="pnum">
+                  <strong>{n.v}</strong>
+                  <span>{n.l}</span>
+                </div>
+              ))}
+            </div>
+            <div className="proj-stack">
+              {p.stack.map((s) => (
+                <span key={s} className="stag">{s}</span>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-    </article>
+      </article>
+    </div>
   );
 }
 
@@ -519,9 +539,6 @@ function ProjectsSec() {
       <div className="sec-head" data-reveal>
         <p className="eyebrow">Selected Work</p>
         <h2>Things I built<br />that didn't exist.</h2>
-        <p className="sec-sub">
-          Not side projects. Not tutorials. Real research, real production, real impact.
-        </p>
       </div>
       <div className="proj-list">
         {PROJECTS.map((p, i) => <ProjectCard key={p.id} p={p} i={i} />)}
@@ -531,7 +548,6 @@ function ProjectsSec() {
 }
 
 // ─── WORK ─────────────────────────────────────────────────────────────────────
-
 function WorkSec() {
   const [open, setOpen] = useState("kairos");
   const role = WORK.find((w) => w.id === open);
@@ -550,7 +566,7 @@ function WorkSec() {
               key={w.id}
               role="tab"
               aria-selected={open === w.id}
-              className={`work-tab${open === w.id ? " active" : ""}`}
+              className={`work-tab ${open === w.id ? "active" : ""}`}
               onClick={() => setOpen(w.id)}
               type="button"
             >
@@ -563,17 +579,14 @@ function WorkSec() {
         <div className="work-detail" data-reveal key={open}>
           <div className="wd-meta">
             <div>
-              <p className="eyebrow" style={{ marginBottom: ".2rem" }}>{role.role}</p>
-              <h3 style={{ margin: 0 }}>{role.co}</h3>
+              <p className="eyebrow">{role.role}</p>
+              <h3>{role.co}</h3>
             </div>
-            <code className="wd-period">{role.period}</code>
+            <span className="wd-period">{role.period}</span>
           </div>
           <ul className="wd-bullets">
             {role.bullets.map((b, i) => (
-              <li key={i}>
-                <span className="bd" aria-hidden="true">—</span>
-                {b}
-              </li>
+              <li key={i}>{b}</li>
             ))}
           </ul>
         </div>
@@ -583,7 +596,6 @@ function WorkSec() {
 }
 
 // ─── STACK ────────────────────────────────────────────────────────────────────
-
 function StackSec() {
   return (
     <section className="stack-sec" id="stack">
@@ -594,7 +606,7 @@ function StackSec() {
 
       <div className="stack-grid">
         {STACK_GROUPS.map((g, i) => (
-          <div key={g.label} className="stack-group" data-reveal style={{ "--delay": `${i * 45}ms` }}>
+          <div key={g.label} className="stack-group" data-reveal style={{ "--delay": `${i * 100}ms` }}>
             <p className="sg-label eyebrow">{g.label}</p>
             <div className="sg-items">
               {g.items.map((item) => (
@@ -609,47 +621,31 @@ function StackSec() {
 }
 
 // ─── CONTACT ─────────────────────────────────────────────────────────────────
-
 function ContactSec() {
   return (
     <section className="contact-sec">
       <div className="contact-inner" data-reveal>
-
-        {/* Left: big CTA text */}
         <div className="contact-copy">
           <p className="eyebrow">Let's build</p>
           <h2 className="contact-h2">
             Got something<br />
             <em>ambitious?</em>
           </h2>
-          <p className="contact-sub">
-            I'm a final-year ECE student who ships production AI.
-            Voice agents, LLMs for underrepresented languages,
-            neuromarketing tools — I'm not afraid of the impossible.
-            If you are building something big, let's talk.
-          </p>
           <div className="contact-links">
-            <a className="cta-primary" href="mailto:prahaladhareddyboreddy@gmail.com" id="contact-cta">
+            <a className="cta-primary" href="mailto:prahaladhareddyboreddy@gmail.com">
               Send an email <ArrowUpRight weight="bold" />
-            </a>
-            <a className="cta-outline" href="https://github.com/Prahaladha-Reddy" target="_blank" rel="noopener">
-              <GithubLogo weight="bold" /> GitHub
-            </a>
-            <a className="cta-outline" href="https://x.com/PrahaladReddyB" target="_blank" rel="noopener">
-              <XLogo weight="bold" /> X / Twitter
             </a>
           </div>
         </div>
 
-        {/* Right: terminal */}
         <div className="terminal">
           <div className="term-bar">
             <div className="term-dots">
-              <span style={{ background: "#6a2820" }} />
-              <span style={{ background: "#6a5418" }} />
-              <span style={{ background: "#1e5a2a" }} />
+              <span style={{ background: "#ff2a2a" }} />
+              <span style={{ background: "#ffff00" }} />
+              <span style={{ background: "#39ff14" }} />
             </div>
-            <code className="term-title">prahalad@kairos — ~</code>
+            <span className="term-title">prahalad@surreal-escape — ~</span>
           </div>
           <div className="term-body">
             <div className="tl"><span className="tp">❯</span><span className="tc">git log --oneline --since="6m ago"</span></div>
@@ -662,14 +658,12 @@ function ContactSec() {
             <div className="tl mt"><span className="tp">❯</span><span className="tc blink">_</span></div>
           </div>
         </div>
-
       </div>
     </section>
   );
 }
 
 // ─── MOUNT ────────────────────────────────────────────────────────────────────
-
 createRoot(document.getElementById("root")).render(
   <React.StrictMode><App /></React.StrictMode>
 );
