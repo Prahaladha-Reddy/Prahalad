@@ -13,6 +13,9 @@ export default function ConnectSection() {
           <a href="mailto:prahaladhareddyboreddy@gmail.com" className="connect__link">
             prahaladhareddyboreddy@gmail.com
           </a>
+          <a href="https://github.com/Prahaladha-Reddy" className="connect__link" target="_blank" rel="noopener noreferrer">
+            https://github.com/Prahaladha-Reddy
+          </a>
           <a href="https://x.com/PrahaladReddyB" className="connect__link" target="_blank" rel="noopener noreferrer">
             https://x.com/PrahaladReddyB
           </a>

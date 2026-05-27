@@ -1,22 +1,14 @@
 import { useEffect, useRef } from 'react'
 
-interface Dot {
-  x: number
-  y: number
+interface Cell {
   baseX: number
   baseY: number
-  vx: number
-  vy: number
-  size: number
-  opacity: number
-  phase: number
-  phaseSpeed: number
 }
 
 export default function HeroSection() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const mouseRef = useRef({ x: -9999, y: -9999 })
-  const dotsRef = useRef<Dot[]>([])
+  const gridRef = useRef<Cell[]>([])
   const rafRef = useRef<number>(0)
 
   const scrollTo = (id: string) => {
@@ -29,82 +21,83 @@ export default function HeroSection() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const SPACING = 28
-    const REPEL_R = 110
-    const REPEL_F = 55
+    const SPACING = 18 // Adjust spacing for the ASCII grid
 
-    function buildDots() {
+    function buildGrid() {
       if (!canvas) return
+      // Add extra columns/rows to ensure it completely overfills the screen bounds
       const cols = Math.ceil(canvas.width / SPACING) + 2
       const rows = Math.ceil(canvas.height / SPACING) + 2
-      const dots: Dot[] = []
+      const cells: Cell[] = []
+      
+      const offsetX = (canvas.width - cols * SPACING) / 2 + SPACING / 2
+      const offsetY = (canvas.height - rows * SPACING) / 2 + SPACING / 2
+
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const bx = c * SPACING
-          const by = r * SPACING
-          dots.push({
-            x: bx, y: by,
-            baseX: bx, baseY: by,
-            vx: 0, vy: 0,
-            size: Math.random() < 0.1 ? 2 : 1.2,
-            opacity: 0.1 + Math.random() * 0.3,
-            phase: Math.random() * Math.PI * 2,
-            phaseSpeed: 0.006 + Math.random() * 0.01,
+          cells.push({
+            baseX: offsetX + c * SPACING,
+            baseY: offsetY + r * SPACING,
           })
         }
       }
-      dotsRef.current = dots
+      gridRef.current = cells
     }
 
     function resize() {
       if (!canvas) return
       canvas.width = canvas.offsetWidth
       canvas.height = canvas.offsetHeight
-      buildDots()
+      buildGrid()
     }
+
+    const CHARS = ['-', '=', '+', '*', '#', '%', '@']
 
     function draw() {
       if (!canvas || !ctx) return
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
+      ctx.font = '14px "Space Mono", monospace'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+
       const mx = mouseRef.current.x
       const my = mouseRef.current.y
+      const time = Date.now() * 0.001
 
-      for (const d of dotsRef.current) {
-        // slow autonomous wave drift
-        d.phase += d.phaseSpeed
-        const tx = d.baseX + Math.sin(d.phase + d.baseY * 0.018) * 14
-        const ty = d.baseY + Math.cos(d.phase + d.baseX * 0.018) * 10
-
-        // cursor repulsion
-        const dx = d.x - mx
-        const dy = d.y - my
+      for (const cell of gridRef.current) {
+        const dx = cell.baseX - mx
+        const dy = cell.baseY - my
         const dist = Math.sqrt(dx * dx + dy * dy)
-
-        if (dist < REPEL_R && dist > 0.5) {
-          const f = (1 - dist / REPEL_R) * REPEL_F
-          d.vx += (dx / dist) * f * 0.12
-          d.vy += (dy / dist) * f * 0.12
+        
+        // 1. Proximity intensity
+        const MAX_DIST = 700 // Reach further across the screen
+        let proximity = 0
+        if (mx !== -9999 && dist < MAX_DIST) {
+          proximity = 1 - (dist / MAX_DIST)
+          // Smoother, wider falloff
+          proximity = Math.pow(proximity, 1.4)
         }
 
-        d.vx += (tx - d.x) * 0.07
-        d.vy += (ty - d.y) * 0.07
-        d.vx *= 0.76
-        d.vy *= 0.76
-        d.x += d.vx
-        d.y += d.vy
+        // 2. Autonomous wave intensity
+        const waveX = Math.sin(time * 0.5 + cell.baseX * 0.003)
+        const waveY = Math.cos(time * 0.4 + cell.baseY * 0.003)
+        const wave = (waveX + waveY) * 0.15
 
-        // colour shifts to red near cursor
-        const prox = Math.max(0, 1 - dist / (REPEL_R * 1.4))
-        const alpha = Math.min(d.opacity + prox * 0.55, 0.92)
-        const rv = Math.round(130 + prox * 72)
-        const gv = Math.round(8 + prox * 8)
-        const bv = Math.round(8 + prox * 8)
+        const rawIntensity = proximity + Math.max(0, wave)
+        const intensity = Math.max(0, Math.min(1, rawIntensity))
 
-        ctx.beginPath()
-        ctx.arc(d.x, d.y, d.size * (0.9 + Math.sin(d.phase * 2.2) * 0.1), 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(${rv},${gv},${bv},${alpha})`
-        ctx.fill()
+        const charIdx = Math.floor(intensity * (CHARS.length - 1))
+        const char = CHARS[charIdx]
+
+        // Base color is a visible deep red, target is glowing hoodie orange
+        const r = Math.round(110 + (232 - 110) * intensity)
+        const g = Math.round(20 + (78 - 20) * intensity)
+        const b = Math.round(20 + (27 - 20) * intensity)
+        const a = 0.35 + 0.65 * intensity // Base opacity is much brighter now
+
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`
+        ctx.fillText(char, cell.baseX, cell.baseY)
       }
 
       rafRef.current = requestAnimationFrame(draw)

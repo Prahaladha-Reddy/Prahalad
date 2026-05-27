@@ -4,21 +4,21 @@ const projects = [
     description:
       'First diffusion language model developed specifically for Indian languages, focusing on high-fidelity text generation and zero-shot capabilities in resource-constrained environments.',
     tags: ['Diffusion Models', 'NLP', 'PyTorch'],
-    url: 'https://github.com/prahaladha-reddy',
+    url: 'https://huggingface.co/Prahaladha/telugu-diffusion-lm',
   },
   {
     name: 'VinD',
     description:
       'Neural Focus Group Simulator engineered to predict complex brain states and cognitive responses using advanced multimodal transformer architectures.',
     tags: ['Transformers', 'Cognitive Modelling', 'Python'],
-    url: 'https://github.com/prahaladha-reddy',
+    url: 'https://github.com/Prahaladha-Reddy/VinD',
   },
   {
     name: 'TeachMe',
     description:
       'An interactive VS Code extension designed to facilitate hands-on technical learning through contextual code analysis and real-time algorithmic guidance.',
     tags: ['TypeScript', 'VS Code API', 'RAG', 'AnalyticsJS'],
-    url: 'https://github.com/prahaladha-reddy',
+    url: 'https://github.com/Prahaladha-Reddy/Teach-Me',
   },
 ]
 
